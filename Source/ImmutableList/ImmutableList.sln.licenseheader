@@ -1,0 +1,19 @@
+extensions: designer.cs generated.cs
+extensions: .cs .cpp .h
+// Copyright 2018 Luca Di Sera
+//		Contact: disera.luca@gmail.com
+//				 https://github.com/diseraluca
+//				 https://www.linkedin.com/in/luca-di-sera-200023167
+//
+// This code is licensed under the MIT License. 
+// More informations can be found in the LICENSE file in the root folder of this repository
+extensions: .aspx .ascx
+<%-- 
+Copyright (c) 2011 rubicon IT GmbH
+--%>
+extensions: .vb
+'Sample license text.
+extensions:  .xml .config .xsd
+<!--
+Sample license text.
+-->
