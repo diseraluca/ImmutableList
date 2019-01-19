@@ -138,6 +138,7 @@
     <ClInclude Include="catch.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Catch_ImmutableListIteratorTests.cpp" />
     <ClCompile Include="Catch_ImmutableListTests.cpp" />
     <ClCompile Include="Catch_Main.cpp" />
   </ItemGroup>

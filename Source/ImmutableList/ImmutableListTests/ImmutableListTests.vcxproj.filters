@@ -26,5 +26,8 @@
     <ClCompile Include="Catch_ImmutableListTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Catch_ImmutableListIteratorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
