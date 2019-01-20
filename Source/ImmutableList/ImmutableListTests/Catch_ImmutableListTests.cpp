@@ -1,10 +1,18 @@
+// Copyright 2018 Luca Di Sera
+//		Contact: disera.luca@gmail.com
+//				 https://github.com/diseraluca
+//				 https://www.linkedin.com/in/luca-di-sera-200023167
+//
+// This code is licensed under the MIT License. 
+// More informations can be found in the LICENSE file in the root folder of this repository
+
 #include "catch.hpp"
 
 #include <immutable_list.h>
 
 using namespace lds;
 
-TEST_CASE("immutable_list::push_front creates and returns a new list with an added node before the head", "[immutable_list][push_front]") {
+TEST_CASE("immutable_list::push_front creates and returns a new list with an added node before the head", "[immutable_list][push_front][modifiers]") {
 	int frontValue{ 15 };
 	
 	immutable_list<int> list{ 14 };
@@ -17,6 +25,20 @@ TEST_CASE("immutable_list::push_front creates and returns a new list with an add
 	SECTION("The first element of the new list contains the data passed to push_front") {
 		REQUIRE(newList.front() == frontValue);
 	}
+}
+
+TEST_CASE("immutable_list::pop_front creates and returns a new list with the head element removed", "[immutable_list][pop_front][modifiers]") {
+	immutable_list<int> list{ 13 };
+	auto newList{ list.pop_front() };
+
+	SECTION("The new list size is one less than the original list") {
+		REQUIRE(newList.size() == (list.size() - 1));
+	}
+
+	SECTION("Popping from a one element list will return an empty list") {
+		CHECK(list.size() == 1);
+		REQUIRE(newList.empty());
+	} 
 }
 
 TEST_CASE("immutable_list supports const iterators for its range", "[immutable_list][iterators]") {

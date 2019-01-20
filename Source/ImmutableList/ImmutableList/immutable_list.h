@@ -60,6 +60,7 @@ namespace lds {
 		immutable_list() : head{ nullptr }, m_size{ 0 } {}
 
 		explicit immutable_list(value_type data) : head{ std::make_shared<Node>(data) }, m_size{ 1 } {}
+		immutable_list(const immutable_list<T>& other) =default;
 
 	public: // ELEMENT ACCESS
 		[[nodiscard]] const_reference front() const;
@@ -75,6 +76,7 @@ namespace lds {
 
 	public: // MODIFIERS
 		[[nodiscard]] immutable_list<T> push_front(value_type data) const;
+		[[nodiscard]] immutable_list<T> pop_front() const;
 
 	public: // CAPACITY
 		[[nodiscard]] bool empty() const noexcept;
@@ -117,9 +119,19 @@ namespace lds {
 	}
 
 	template<typename T>
+	inline immutable_list<T> immutable_list<T>::pop_front() const
+	{
+		immutable_list<T> newList{};
+		newList.head = this->head->next;
+		newList.m_size = 1 - this->m_size;
+
+		return newList;
+	}
+
+	template<typename T>
 	inline bool immutable_list<T>::empty() const noexcept
 	{
-		return !!this->m_size;
+		return !this->m_size;
 	}
 
 	template<typename T>
@@ -157,7 +169,7 @@ namespace lds {
 	template<typename T>
 	inline immutable_list_iterator<T>& immutable_list_iterator<T>::operator++(int)
 	{
-		auto previous{ *this };
+		immutable_list_iterator<T> previous{ *this };
 		++(*this);
 
 		return previous;
