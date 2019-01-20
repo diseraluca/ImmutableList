@@ -25,6 +25,56 @@ TEST_CASE("An immutable_list can be constructed from an initializer list", "[imm
 	}
 }
 
+TEST_CASE("immutable_list provides access methods to individual elements", "[immutable_list][element_access][exception]") {
+	immutable_list<int> list{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+	SECTION("operator[] returns the element at index i counting from 0") {
+		REQUIRE(list[1] == 1);
+		REQUIRE(list[5] == 5);
+	}
+
+	SECTION("immutable_list::at returns the element at index i counting from 0") {
+		REQUIRE(list[4] == 4);
+		REQUIRE(list[9] == 9);
+	}
+
+	SECTION("immutable_list::at throws std::out_of_range if the index is greater than the elements in the list") {
+		immutable_list<int>::size_type outOfRangeIndex{ list.size() };
+
+		REQUIRE_THROWS_AS(list.at(outOfRangeIndex), std::out_of_range);
+	}
+}
+
+TEST_CASE("immutable_list supports const iterators for its range", "[immutable_list][iterators]") {
+	immutable_list<char> list{};
+
+	SECTION("immutable_list::cbegin is identical to immutable_list::cend if the list is empty") {
+		REQUIRE(list.cbegin() == list.cend());
+	}
+
+	SECTION("immutable_list::cbegin returns an iterator to the first element of the list") {
+		char newValue = 'b';
+
+		REQUIRE(*(list.push_front(newValue).cbegin()) == newValue);
+	}
+
+	SECTION("immutable_list::cbegin will reach immutable_list::cend by being incremented, after traversing all the elements of the list") {
+		auto newList = list.push_front('b').push_front('c').push_front('d');
+		auto iterator = newList.cbegin();
+
+		CHECK(iterator != newList.cend());
+		for (std::size_t _{ 0 }; _ < newList.size(); ++iterator, ++_) {}
+		REQUIRE(iterator == newList.cend());
+	}
+}
+
+TEST_CASE("immutable_list::clear return an new empty immutable_list") {
+	immutable_list<int> list{ 15 };
+
+	CHECK(list != list.clear());
+	REQUIRE(list.clear().empty());
+}
+
 TEST_CASE("immutable_list::push_front creates and returns a new list with an added node before the head", "[immutable_list][push_front][modifiers]") {
 	int frontValue{ 15 };
 	
@@ -52,29 +102,6 @@ TEST_CASE("immutable_list::pop_front creates and returns a new list with the hea
 		CHECK(list.size() == 1);
 		REQUIRE(newList.empty());
 	} 
-}
-
-TEST_CASE("immutable_list supports const iterators for its range", "[immutable_list][iterators]") {
-	immutable_list<char> list{};
-
-	SECTION("immutable_list::cbegin is identical to immutable_list::cend if the list is empty") {
-		REQUIRE(list.cbegin() == list.cend());
-	}
-
-	SECTION("immutable_list::cbegin returns an iterator to the first element of the list") {
-		char newValue = 'b';
-
-		REQUIRE(*(list.push_front(newValue).cbegin()) == newValue);
-	}
-
-	SECTION("immutable_list::cbegin will reach immutable_list::cend by being incremented, after traversing all the elements of the list") {
-		auto newList = list.push_front('b').push_front('c').push_front('d');
-		auto iterator = newList.cbegin();
-
-		CHECK(iterator != newList.cend());
-		for (std::size_t _{ 0 }; _ < newList.size(); ++iterator, ++_) {}
-		REQUIRE(iterator == newList.cend());
-	}
 }
 
 TEST_CASE("immutable_lists can be compared for equality and inequality", "[immutable_list][operators][equality][inequality]") {

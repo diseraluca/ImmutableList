@@ -9,6 +9,7 @@
 #pragma once
 
 #include <memory>
+#include <sstream>
 
 namespace lds {
 	template <typename T>
@@ -67,6 +68,9 @@ namespace lds {
 	public: // ELEMENT ACCESS
 		[[nodiscard]] const_reference front() const;
 
+		const_reference at(size_type index) const;
+		const_reference operator[](size_type index) const;
+
 	public: // ITERATORS
 		[[nodiscard]] const_iterator cbegin() const noexcept {
 			return const_iterator{ this->head };
@@ -77,6 +81,7 @@ namespace lds {
 		}
 
 	public: // MODIFIERS
+		[[nodiscard]] immutable_list<T> clear() const noexcept;
 		[[nodiscard]] immutable_list<T> push_front(value_type data) const;
 		[[nodiscard]] immutable_list<T> pop_front() const;
 
@@ -128,6 +133,31 @@ namespace lds {
 	typename inline immutable_list<T>::const_reference immutable_list<T>::front() const
 	{
 		return this->head->data;
+	}
+
+	template<typename T>
+	typename inline immutable_list<T>::const_reference immutable_list<T>::at(immutable_list<T>::size_type index) const
+	{
+		if (index >= this->m_size) {
+			throw std::out_of_range((std::stringstream() << "The list does not contain index " << index).str());
+		}
+
+		return (*this)[index];
+	}
+
+	template<typename T>
+	typename inline immutable_list<T>::const_reference immutable_list<T>::operator[](immutable_list<T>::size_type index) const
+	{
+		auto element{ this->cbegin() };
+		while (index--) { ++element; }
+
+		return *element;
+	}
+
+	template<typename T>
+	inline immutable_list<T> immutable_list<T>::clear() const noexcept
+	{
+		return immutable_list<T>{};
 	}
 
 	template<typename T>
