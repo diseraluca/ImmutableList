@@ -62,6 +62,8 @@ namespace lds {
 		explicit immutable_list(value_type data) : head{ std::make_shared<Node>(data) }, m_size{ 1 } {}
 		immutable_list(const immutable_list<T>& other) =default;
 
+		explicit immutable_list(std::initializer_list<T> list);
+
 	public: // ELEMENT ACCESS
 		[[nodiscard]] const_reference front() const;
 
@@ -83,7 +85,7 @@ namespace lds {
 
 		[[nodiscard]] size_type size() const noexcept;
 
-		[[nodiscard]] size_type max_size() const noexcept;
+		[[nodiscard]] constexpr size_type max_size() const noexcept;
 
 	public:
 		struct Node {
@@ -100,6 +102,20 @@ namespace lds {
 		std::shared_ptr<Node> head;
 		size_type m_size;
 	};
+
+	template<typename T>
+	inline immutable_list<T>::immutable_list(std::initializer_list<T> list)
+	{
+		auto lastElement{ std::rend(list) };
+		for (auto element{ std::rbegin(list) }; element != lastElement ; ++element) {
+			auto node{ std::make_shared<Node>(*element) };
+			node->next = this->head;
+
+			this->head = node;
+		}
+
+		this->m_size = list.size();
+	}
 
 	template<typename T>
 	typename inline immutable_list<T>::const_reference immutable_list<T>::front() const
@@ -141,7 +157,7 @@ namespace lds {
 	}
 
 	template<typename T>
-	typename inline immutable_list<T>::size_type immutable_list<T>::max_size() const noexcept
+	typename inline constexpr immutable_list<T>::size_type immutable_list<T>::max_size() const noexcept
 	{
 		return std::numeric_limits<size_type>::max();
 	}

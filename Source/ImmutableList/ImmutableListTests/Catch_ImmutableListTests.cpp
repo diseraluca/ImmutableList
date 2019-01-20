@@ -12,6 +12,19 @@
 
 using namespace lds;
 
+TEST_CASE("An immutable_list can be constructed from an initializer list", "[immutable_list][constructors]") {
+	std::initializer_list<int> initializer{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	immutable_list<int> list{ initializer };
+
+	SECTION("The resuting list has the same size of the initializer_list") {
+		REQUIRE(list.size() == initializer.size());
+	}
+
+	SECTION("The resulting list contains all the elemnents in the initializer_list in the same order") {
+		REQUIRE(std::equal(initializer.begin(), initializer.end(), list.cbegin(), list.cend()));
+	}
+}
+
 TEST_CASE("immutable_list::push_front creates and returns a new list with an added node before the head", "[immutable_list][push_front][modifiers]") {
 	int frontValue{ 15 };
 	
