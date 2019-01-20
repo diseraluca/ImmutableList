@@ -76,3 +76,28 @@ TEST_CASE("immutable_list supports const iterators for its range", "[immutable_l
 		REQUIRE(iterator == newList.cend());
 	}
 }
+
+TEST_CASE("immutable_lists can be compared for equality and inequality", "[immutable_list][operators][equality][inequality]") {
+	immutable_list<int> list{ 14 };
+
+	SECTION("A list is always equal to itself") {
+		REQUIRE(list == list);
+	}
+
+	SECTION("Two lists with different elements are not equal to one another") {
+		REQUIRE(list != list.push_front(15));
+	}
+
+	SECTION("Two lists of different size are unequal") {
+		auto list2{ list.push_front(16) };
+
+		CHECK(list.size() != list2.size());
+		REQUIRE(list != list2);
+	}
+
+	SECTION("Two lists with the same elements are equal") {
+		immutable_list<int> list2{ 14 };
+
+		REQUIRE(list == list2);
+	}
+}

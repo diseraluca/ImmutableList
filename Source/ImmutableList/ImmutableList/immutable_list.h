@@ -87,6 +87,13 @@ namespace lds {
 
 		[[nodiscard]] constexpr size_type max_size() const noexcept;
 
+	public: // OPERATORS
+		template <typename T>
+		friend bool operator==(const immutable_list<T>& left, const immutable_list<T>& right);
+
+		template <typename T>
+		friend bool operator!=(const immutable_list<T>& left, const immutable_list<T>& right);
+
 	public:
 		struct Node {
 		public:
@@ -172,6 +179,18 @@ namespace lds {
 	inline bool operator!=(const immutable_list_iterator<T>& left, const immutable_list_iterator<T>& right) noexcept
 	{
 		return !(left.node.lock() == right.node.lock());
+	}
+
+	template<typename T>
+	bool operator==(const immutable_list<T>& left, const immutable_list<T>& right)
+	{
+		return std::equal(left.cbegin(), left.cend(), right.cbegin(), right.cend());
+	}
+
+	template<typename T>
+	bool operator!=(const immutable_list<T>& left, const immutable_list<T>& right)
+	{
+		return !std::equal(left.cbegin(), left.cend(), right.cbegin(), right.cend());
 	}
 
 	template<typename T>
