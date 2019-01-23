@@ -12,6 +12,17 @@
 
 using namespace lds;
 
+TEST_CASE("An immutable_list can be constructed from another list range", "[immutable_list][constructors]") {
+	int endValue{ 3 };
+
+	immutable_list<int> list{ 1, 2, 3, 4 };
+	immutable_list<int> newList{ list.cbegin(), std::find(list.cbegin(), list.cend(), endValue) };
+
+	SECTION("The new list is equal to original list range") {
+		REQUIRE(std::equal(newList.cbegin(), newList.cend(), list.cbegin()));
+	}
+}
+
 TEST_CASE("An immutable_list can be constructed from an initializer list", "[immutable_list][constructors]") {
 	std::initializer_list<int> initializer{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 	immutable_list<int> list{ initializer };
@@ -102,6 +113,35 @@ TEST_CASE("immutable_list::pop_front creates and returns a new list with the hea
 		CHECK(list.size() == 1);
 		REQUIRE(newList.empty());
 	} 
+}
+
+TEST_CASE("immutable_list::insert_after returns a new list with new elements inserted after the given position") {
+	int valueToInsertAfter{ 4 };
+	int newValue{ 5 };
+	immutable_list<int> list{ 1, 2, 3, 4, 6, 7, 8, 9 };
+	auto it{ std::find(list.cbegin(), list.cend(), valueToInsertAfter) };
+
+	auto newList{ list.insert_after(it, newValue) };
+
+	SECTION("The new list size is one more than the original list") {
+		REQUIRE(newList.size() == (list.size() + 1));
+	}
+
+	SECTION("The newly inserted value is inserted right after the given position") {
+		auto newIt{ std::find(newList.cbegin(), newList.cend(), valueToInsertAfter) };
+
+		REQUIRE(*(++newIt) == newValue);
+	}
+
+	SECTION("The two lists are equal before the inserted value") {
+		REQUIRE(std::equal(list.cbegin(), ++it, newList.cbegin()));
+	}
+
+	SECTION("The two lists are equal after the inserted value") {
+		auto newIt{ std::find(newList.cbegin(), newList.cend(), newValue) };
+
+		REQUIRE(std::equal(++it, list.cend(), ++newIt));
+	}
 }
 
 TEST_CASE("immutable_lists can be compared for equality and inequality", "[immutable_list][operators][equality][inequality]") {

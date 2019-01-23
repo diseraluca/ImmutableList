@@ -54,7 +54,7 @@ TEST_CASE("immutable_list_iterator can be incremented", "[immutable_list_iterato
 		REQUIRE((iterator == list.cend() || *iterator));
 	}
 
-	SECTION("immutable_list_iterators that compare equals still do after both being incremented", "[immutable_list_iterator]") {
+	SECTION("immutable_list_iterators that compare equals still do after both being incremented") {
 		auto iterator = list.cbegin();
 		auto iterator2 = list.cbegin();
 

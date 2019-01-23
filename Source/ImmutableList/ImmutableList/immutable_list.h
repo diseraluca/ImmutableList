@@ -17,6 +17,8 @@ namespace lds {
 
 	template <typename T>
 	class immutable_list_iterator {
+		friend class immutable_list<T>;
+
 	public:
 		using value_type = T;
 		using reference = const value_type&;
@@ -26,7 +28,7 @@ namespace lds {
 
 	public:
 		immutable_list_iterator() : node{} {}
-		immutable_list_iterator(const immutable_list_iterator<T>& other) : node{ other.node } {};
+		immutable_list_iterator(const immutable_list_iterator<T>& other) =default;
 		immutable_list_iterator(std::shared_ptr<typename immutable_list<T>::Node> node) : node{ node } {}
 
 		immutable_list_iterator<T>& operator=(const immutable_list_iterator<T>& other) { node = other.node; return *this; }
@@ -38,7 +40,7 @@ namespace lds {
 		friend bool operator!=(const immutable_list_iterator<T>& left, const immutable_list_iterator<T>& right) noexcept;
 
 		immutable_list_iterator<T>& operator++();
-		immutable_list_iterator<T>& operator++(int);
+		immutable_list_iterator<T> operator++(int);
 
 		[[nodiscard]] reference operator*() const;
 
@@ -58,10 +60,12 @@ namespace lds {
 		using size_type = std::size_t;
 
 	public: // CONSTRUCTORS
-		immutable_list() : head{ nullptr }, m_size{ 0 } {}
+		immutable_list() : head{ std::make_shared<Node>() }, tail{ head }, m_size{ 0 } {}
 
-		explicit immutable_list(value_type data) : head{ std::make_shared<Node>(data) }, m_size{ 1 } {}
+		explicit immutable_list(value_type data) : head{ std::make_shared<Node>(data) }, m_size{ 1 } { this->head->next = std::make_shared<Node>(); tail = this->head->next; }
 		immutable_list(const immutable_list<T>& other) =default;
+
+		immutable_list(const_iterator first, const_iterator last);
 
 		explicit immutable_list(std::initializer_list<T> list);
 
@@ -77,13 +81,15 @@ namespace lds {
 		}
 
 		[[nodiscard]] const_iterator cend() const noexcept {
-			return const_iterator{ nullptr };
+			return const_iterator{ this->tail.lock() };
 		}
 
 	public: // MODIFIERS
 		[[nodiscard]] immutable_list<T> clear() const noexcept;
 		[[nodiscard]] immutable_list<T> push_front(value_type data) const;
 		[[nodiscard]] immutable_list<T> pop_front() const;
+
+		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, value_type value) const;
 
 	public: // CAPACITY
 		[[nodiscard]] bool empty() const noexcept;
@@ -102,8 +108,8 @@ namespace lds {
 	public:
 		struct Node {
 		public:
+			Node() =default;
 			explicit Node(value_type data) : data{ data }, next{ nullptr } {}
-			explicit Node(value_type data, Node next) : data{ data }, next{ next } {}
 
 		public:
 			value_type data;
@@ -112,12 +118,40 @@ namespace lds {
 
 	private:
 		std::shared_ptr<Node> head;
+		std::weak_ptr<Node> tail;
 		size_type m_size;
 	};
+
+	//TODO: make a more elegant implementation
+	template<typename T>
+	inline immutable_list<T>::immutable_list(const_iterator first, const_iterator last)
+	{
+		if (first == last) {
+			this->head = std::make_shared<Node>(*first);
+			this->m_size = 0;
+		}
+
+		this->head = std::make_shared<Node>(*first);
+		this->m_size = 1;
+
+		Node* currentNode{ this->head.get() };
+		while (++first != last) {
+			currentNode->next = std::make_shared<Node>(*first);
+			++this->m_size;
+
+			currentNode = currentNode->next.get();
+		}
+
+		currentNode->next = std::make_shared<Node>();
+		this->tail = currentNode->next;
+	}
 
 	template<typename T>
 	inline immutable_list<T>::immutable_list(std::initializer_list<T> list)
 	{
+		this->head = std::make_shared<Node>();
+		this->tail = this->head;
+
 		auto lastElement{ std::rend(list) };
 		for (auto element{ std::rbegin(list) }; element != lastElement ; ++element) {
 			auto node{ std::make_shared<Node>(*element) };
@@ -157,7 +191,7 @@ namespace lds {
 	template<typename T>
 	inline immutable_list<T> immutable_list<T>::clear() const noexcept
 	{
-		return immutable_list<T>{};
+		return immutable_list<T>();
 	}
 
 	template<typename T>
@@ -166,6 +200,7 @@ namespace lds {
 		immutable_list<T> newList{ data };
 
 		newList.head->next = this->head;
+		newList.tail = this->tail.lock();
 		newList.m_size = 1 + this->m_size;
 
 		return newList;
@@ -177,6 +212,30 @@ namespace lds {
 		immutable_list<T> newList{};
 		newList.head = this->head->next;
 		newList.m_size = 1 - this->m_size;
+
+		return newList;
+	}
+
+	// TODO: Benchmark this implementation and a flattened out one ( e.g copying the list manually so we don't have to traverse to the last element )
+	// TODO: Change to an elegant solution
+	template<typename T>
+	inline immutable_list<T> immutable_list<T>::insert_after(const_iterator pos, value_type value) const
+	{
+		immutable_list<T> newList{ this->cbegin(), ++pos };
+		auto it{ newList.cbegin() };
+		while (it.node.lock()->next != newList.cend().node.lock())
+		{
+			++it;
+		}
+
+		it.node.lock()->next = std::make_shared<Node>(value);
+		it.node.lock()->next->next = pos.node.lock();
+		newList.tail = this->tail;
+
+		++newList.m_size;
+		while (pos++ != this->cend()) {
+			++newList.m_size;
+		}
 
 		return newList;
 	}
@@ -232,7 +291,7 @@ namespace lds {
 	}
 
 	template<typename T>
-	inline immutable_list_iterator<T>& immutable_list_iterator<T>::operator++(int)
+	inline immutable_list_iterator<T> immutable_list_iterator<T>::operator++(int)
 	{
 		immutable_list_iterator<T> previous{ *this };
 		++(*this);
@@ -240,20 +299,15 @@ namespace lds {
 		return previous;
 	}
 
-
 	template<typename T>
 	typename inline immutable_list_iterator<T>::reference immutable_list_iterator<T>::operator*() const
 	{
-		auto shared = this->node.lock();
-
-		return shared->data;
+		return this->node.lock()->data;
 	}
 
 	template<typename T>
 	typename inline immutable_list_iterator<T>::pointer immutable_list_iterator<T>::operator->() const
 	{
-		auto shared = this->node.lock();
-		
-		return &(shared->data);
+		return &(this->node.lock()->data);
 	}
 }
