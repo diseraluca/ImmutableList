@@ -29,7 +29,29 @@ TEST_CASE("immutable_list_iterator is destructible", "[immutable_list_iterator]"
 }
 
 TEST_CASE("immutable_list_iterator can be compared for equivalence", "[immutable_list_iterator]") {
-	REQUIRE(immutable_list_iterator<int>() == immutable_list_iterator<int>());
+	SECTION("An immutable_list_iterator is always equivalent to itself") {
+		immutable_list_iterator<int> it{};
+
+		REQUIRE(it == it);
+	}
+
+	SECTION("The immutable_list_iterator equality operator satisfies the reflexive property") {
+		immutable_list_iterator<int> it{};
+		immutable_list_iterator<int> it2{};
+
+		REQUIRE(it == it2);
+		REQUIRE(it2 == it);
+	}
+
+	SECTION("The immutable_list_iterator equality operator satisfies the transivity property") {
+		immutable_list_iterator<int> it{};
+		immutable_list_iterator<int> it2{};
+		immutable_list_iterator<int> it3{};
+
+		REQUIRE(it == it2);
+		REQUIRE(it2 == it3);
+		REQUIRE(it == it3);
+	}
 }
 
 TEST_CASE("immutable_list_iterator can be compared for inequality", "[immutable_list_iterator]") {

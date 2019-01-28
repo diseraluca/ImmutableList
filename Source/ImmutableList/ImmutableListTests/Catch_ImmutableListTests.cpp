@@ -12,14 +12,18 @@
 
 using namespace lds;
 
-TEST_CASE("An immutable_list can be constructed from another list range", "[immutable_list][constructors]") {
+TEST_CASE("An immutable_list can be constructed from an iterator range", "[immutable_list][constructors]") {
 	int endValue{ 3 };
 
-	immutable_list<int> list{ 1, 2, 3, 4 };
-	immutable_list<int> newList{ list.cbegin(), std::find(list.cbegin(), list.cend(), endValue) };
+	std::vector<int> containerForRange{ 1, 2, 3, 4 };
+	immutable_list<int> newList{ containerForRange.cbegin(), std::find(containerForRange.cbegin(), containerForRange.cend(), endValue) };
 
-	SECTION("The new list is equal to original list range") {
-		REQUIRE(std::equal(newList.cbegin(), newList.cend(), list.cbegin()));
+	SECTION("The new list has the same elements, in the same order, of the original range") {
+		REQUIRE(std::equal(newList.cbegin(), newList.cend(), containerForRange.cbegin()));
+	}
+
+	SECTION("An empty range returns an empty list") {
+		REQUIRE(immutable_list<int>(containerForRange.begin(), containerForRange.begin()).empty());
 	}
 }
 
@@ -115,32 +119,79 @@ TEST_CASE("immutable_list::pop_front creates and returns a new list with the hea
 	} 
 }
 
-TEST_CASE("immutable_list::insert_after returns a new list with new elements inserted after the given position") {
-	int valueToInsertAfter{ 4 };
-	int newValue{ 5 };
+// TODO : Find a more elegant and readable solution to test the different overloads
+// TODO : Make this test more lightweight
+TEST_CASE("immutable_list::insert_after provides a way to create a new list with one or more elements inserted after a specific position", "[immutable_list][modifiers][insert_after]") {
+	int insertionPivotValue{ 4 };
+	int insertedValue{ 5 };
+	
 	immutable_list<int> list{ 1, 2, 3, 4, 6, 7, 8, 9 };
-	auto it{ std::find(list.cbegin(), list.cend(), valueToInsertAfter) };
+	auto originalListPivotPosition{ std::find(list.cbegin(), list.cend(), insertionPivotValue) };
 
-	auto newList{ list.insert_after(it, newValue) };
+	auto singleInsertion{ list.insert_after(originalListPivotPosition, insertedValue) };
 
-	SECTION("The new list size is one more than the original list") {
-		REQUIRE(newList.size() == (list.size() + 1));
+	immutable_list<int>::size_type countedInsertionElementsCount{ 4 };
+	auto countedInsertion{ list.insert_after(originalListPivotPosition, countedInsertionElementsCount, insertedValue) }; 
+
+	std::vector<int> rangeInsertionOriginalContainer{ 1, 2, 3, 4, 5 ,6 };
+	immutable_list<int>::size_type rangeInsertionElementsCount{ rangeInsertionOriginalContainer.size() };
+	auto rangeInsertion{ list.insert_after(originalListPivotPosition, rangeInsertionOriginalContainer.cbegin(), rangeInsertionOriginalContainer.cend()) };
+
+	std::initializer_list<int> initializerInsertionIList{ 2, 3, 44, 655, 6532 };
+	immutable_list<int>::size_type initializerInsertionElementsCount{ initializerInsertionIList.size() };
+	auto initializerInsertion{ list.insert_after(originalListPivotPosition, initializerInsertionIList) };
+
+	SECTION("The new list size is n more than the original list where n is the number of newly inserted elements") {
+		REQUIRE(singleInsertion.size() == (list.size() + 1));
+		REQUIRE(countedInsertion.size() == (list.size() + countedInsertionElementsCount));
+		REQUIRE(rangeInsertion.size() == (list.size() + rangeInsertionElementsCount));
+		REQUIRE(initializerInsertion.size() == (list.size() + initializerInsertionElementsCount));
 	}
 
-	SECTION("The newly inserted value is inserted right after the given position") {
-		auto newIt{ std::find(newList.cbegin(), newList.cend(), valueToInsertAfter) };
+	SECTION("n elements with the given values are inserted right after the given position") {
+		auto findFirstInsertedElement{ [insertionPivotValue](auto& modifiedList) { return ++std::find(modifiedList.cbegin(), modifiedList.cend(), insertionPivotValue); } };
+		auto testInsertedRange{ [](auto& elementIterator, auto&& valuesIterator, auto elementCount) {
+			for (std::size_t index{0}; index < elementCount; ++index, ++elementIterator, ++valuesIterator) {
+				REQUIRE(*elementIterator == *valuesIterator);
+			}
+		} };
 
-		REQUIRE(*(++newIt) == newValue);
+		auto singleInsertionElement{ findFirstInsertedElement(singleInsertion) };
+		REQUIRE(*singleInsertionElement == insertedValue);
+
+		auto countedInsertionFirstElement{ findFirstInsertedElement(countedInsertion) };
+		testInsertedRange(countedInsertionFirstElement, std::vector<int>(countedInsertionElementsCount, insertedValue).cbegin(), countedInsertionElementsCount);
+	
+		auto rangeInsertionFirstElement{ findFirstInsertedElement(rangeInsertion) };
+		testInsertedRange(rangeInsertionFirstElement, rangeInsertionOriginalContainer.cbegin(), rangeInsertionElementsCount);
+
+		auto initializerInsertionFirstElement{ findFirstInsertedElement(initializerInsertion) };
+		testInsertedRange(initializerInsertionFirstElement, initializerInsertionIList.begin(), initializerInsertionElementsCount);
 	}
 
-	SECTION("The two lists are equal before the inserted value") {
-		REQUIRE(std::equal(list.cbegin(), ++it, newList.cbegin()));
+	SECTION("The new list is equal to the original list before the inserted elements") {
+		auto originalElementAfterTheInsertionPivot{ ++originalListPivotPosition };
+
+		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, singleInsertion.cbegin()));
+		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, countedInsertion.cbegin()));
+		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, rangeInsertion.cbegin()));
+		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, initializerInsertion.cbegin()));
 	}
 
-	SECTION("The two lists are equal after the inserted value") {
-		auto newIt{ std::find(newList.cbegin(), newList.cend(), newValue) };
+	SECTION("The new list is equal to the original list after the inserted elements") {
+		auto findFirstElementAfterTheInsertedOnes{ [insertionPivotValue](auto& modifiedList, auto elementCount){ 
+			auto it{ ++std::find(modifiedList.cbegin(), modifiedList.cend(), insertionPivotValue) };
+			for (std::size_t index{ 0 }; index < elementCount; ++index, ++it) {}
 
-		REQUIRE(std::equal(++it, list.cend(), ++newIt));
+			return it;
+		} };
+
+		auto originalElementAfterTheInsertionPivot{ ++originalListPivotPosition };
+
+		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(singleInsertion, std::size_t(1))));
+		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(countedInsertion, countedInsertionElementsCount)));
+		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(rangeInsertion, rangeInsertionElementsCount)));
+		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(initializerInsertion, initializerInsertionElementsCount)));
 	}
 }
 
