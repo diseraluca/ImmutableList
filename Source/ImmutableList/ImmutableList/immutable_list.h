@@ -150,8 +150,11 @@ namespace lds {
 		 *
 		 *
 		 * The original list isn't modified in any way.
+		 * References and Iterators to the orignal list are not invalidated
 		 *
 		 * The new list and the orignal one may share some memory.
+		 * 
+		 * Modifiers ensures a Strong Exception Garuantee
 		 *
 		 */
 		///@{
@@ -161,12 +164,18 @@ namespace lds {
 		[[nodiscard]] immutable_list<T> push_front(value_type& data) const;
 		[[nodiscard]] immutable_list<T> push_front(value_type&& data) const;
 
+		template <typename ...Args>
+		[[nodiscard]] immutable_list<T> emplace_front(Args&&... args) const;
+
 		[[nodiscard]] immutable_list<T> pop_front() const;
 
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, const value_type& value) const;
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, value_type&& value) const;
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, size_type count, const value_type& value) const;
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, std::initializer_list<T> list) const;
+
+		template<typename... Args>
+		[[nodiscard]] immutable_list<T> emplace_after(const_iterator pos, Args&&... args) const;
 
 		template <typename InputIterator>
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, InputIterator first, InputIterator last) const;
@@ -433,6 +442,32 @@ namespace lds {
 	}
 
 	/*!
+	 * @brief Generates a new list with an element prepended to it
+	 *
+	 * The element is constructed in place trough brace initialization.
+	 * Does not make a copy of the whole list.
+	 *
+	 * @tparam	T		Generic type parameter
+	 * @tparam	Args	Variadic type parameter
+	 * @param	args	The arguments to pass to the element constructor
+	 *
+	 * @returns	A new list with an element prepended
+	 */
+
+	template <typename T>
+	template <typename ...Args>
+	inline immutable_list<T> immutable_list<T>::emplace_front(Args&&... args) const {
+		// TODO: check if there is a sense in trying a variadic emplace constructor
+		immutable_list<T> newList{ T{std::forward<Args>(args)...} };
+
+		newList.head->next = this->head;
+		newList.tail = this->tail.lock();
+		newList.m_size = 1 + this->m_size;
+
+		return newList;
+	}
+
+	/*!
 	 * @brief	Generates a new list with an the front element removed
 	 * 			
 	 * Does not need to copy the list.
@@ -562,6 +597,34 @@ namespace lds {
 		// Connects back to the orignal list
 		lastNode->next = pos.node.lock();
 		newList.tail = this->tail;
+
+		return newList;
+	}
+
+	/*!
+	 * @brief Inserts a new element after the position pos
+	 * 		 
+	 * The element is constructed in place trough brace initialization.
+	 * 
+	 * @tparam	T		Generic type parameter
+	 * @tparam	Args	Variadic type parameter
+	 * @param	pos		The position after which the new elements should be inserted. Must be a valid iterator in the range [begin, end) of this list. 
+	 * @param	args	The arguments to pass to the element constructor
+	 * 					
+	 * @returns	A new list with one element inserted after the given position
+	 */
+
+	template<typename T>
+	template<class ...Args>
+	inline immutable_list<T> immutable_list<T>::emplace_after(const_iterator pos, Args && ...args) const
+	{
+		auto newList{ immutable_list<T>(this->cbegin(), ++pos) };
+		auto lastNode{ newList.iteratorAt(newList.m_size - 1).node.lock() };
+
+		lastNode->next = std::make_shared<Node>(T{ std::forward<Args>(args)... });
+		lastNode->next->next = pos.node.lock();
+
+		newList.m_size += std::distance(pos, this->cend()) + 1;
 
 		return newList;
 	}

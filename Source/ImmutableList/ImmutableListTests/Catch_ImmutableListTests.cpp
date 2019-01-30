@@ -90,18 +90,21 @@ TEST_CASE("immutable_list::clear return an new empty immutable_list") {
 	REQUIRE(list.clear().empty());
 }
 
-TEST_CASE("immutable_list::push_front creates and returns a new list with an added node before the head", "[immutable_list][push_front][modifiers]") {
+TEST_CASE("immutable_list::push_front/emplace_front creates and returns a new list with an added node before the head", "[immutable_list][push_front][modifiers]") {
 	int frontValue{ 15 };
 	
 	immutable_list<int> list{ 14 };
 	auto newList = list.push_front(frontValue);
+	auto emplacedList = list.emplace_front(frontValue);
 
 	SECTION("The new list size is one more than the original list") {
 		REQUIRE(newList.size() == (list.size() + 1));
+		REQUIRE(emplacedList.size() == (list.size() + 1));
 	}
 
 	SECTION("The first element of the new list contains the data passed to push_front") {
 		REQUIRE(newList.front() == frontValue);
+		REQUIRE(emplacedList.front() == frontValue);
 	}
 }
 
@@ -121,7 +124,7 @@ TEST_CASE("immutable_list::pop_front creates and returns a new list with the hea
 
 // TODO : Find a more elegant and readable solution to test the different overloads
 // TODO : Make this test more lightweight
-TEST_CASE("immutable_list::insert_after provides a way to create a new list with one or more elements inserted after a specific position", "[immutable_list][modifiers][insert_after]") {
+TEST_CASE("immutable_list::insert_after/emplace_after provides a way to create a new list with one or more elements inserted after a specific position", "[immutable_list][modifiers][insert_after]") {
 	int insertionPivotValue{ 4 };
 	int insertedValue{ 5 };
 	
@@ -141,11 +144,14 @@ TEST_CASE("immutable_list::insert_after provides a way to create a new list with
 	immutable_list<int>::size_type initializerInsertionElementsCount{ initializerInsertionIList.size() };
 	auto initializerInsertion{ list.insert_after(originalListPivotPosition, initializerInsertionIList) };
 
+	auto emplaceInsertion{ list.emplace_after(originalListPivotPosition, insertedValue) };
+
 	SECTION("The new list size is n more than the original list where n is the number of newly inserted elements") {
 		REQUIRE(singleInsertion.size() == (list.size() + 1));
 		REQUIRE(countedInsertion.size() == (list.size() + countedInsertionElementsCount));
 		REQUIRE(rangeInsertion.size() == (list.size() + rangeInsertionElementsCount));
 		REQUIRE(initializerInsertion.size() == (list.size() + initializerInsertionElementsCount));
+		REQUIRE(emplaceInsertion.size() == (list.size() + 1));
 	}
 
 	SECTION("n elements with the given values are inserted right after the given position") {
@@ -167,6 +173,9 @@ TEST_CASE("immutable_list::insert_after provides a way to create a new list with
 
 		auto initializerInsertionFirstElement{ findFirstInsertedElement(initializerInsertion) };
 		testInsertedRange(initializerInsertionFirstElement, initializerInsertionIList.begin(), initializerInsertionElementsCount);
+
+		auto emplaceInsertionElement{ findFirstInsertedElement(emplaceInsertion) };
+		REQUIRE(*emplaceInsertionElement == insertedValue);
 	}
 
 	SECTION("The new list is equal to the original list before the inserted elements") {
@@ -176,6 +185,7 @@ TEST_CASE("immutable_list::insert_after provides a way to create a new list with
 		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, countedInsertion.cbegin()));
 		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, rangeInsertion.cbegin()));
 		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, initializerInsertion.cbegin()));
+		REQUIRE(std::equal(list.cbegin(), originalElementAfterTheInsertionPivot, emplaceInsertion.cbegin()));
 	}
 
 	SECTION("The new list is equal to the original list after the inserted elements") {
@@ -192,6 +202,7 @@ TEST_CASE("immutable_list::insert_after provides a way to create a new list with
 		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(countedInsertion, countedInsertionElementsCount)));
 		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(rangeInsertion, rangeInsertionElementsCount)));
 		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(initializerInsertion, initializerInsertionElementsCount)));
+		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(emplaceInsertion, std::size_t(1))));
 	}
 }
 
