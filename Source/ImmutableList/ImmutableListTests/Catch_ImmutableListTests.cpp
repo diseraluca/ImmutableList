@@ -6,6 +6,8 @@
 // This code is licensed under the MIT License. 
 // More informations can be found in the LICENSE file in the root folder of this repository
 
+// TODO: Reformat the test suite and test for edge cases and API contracts
+
 #include "catch.hpp"
 
 #include <immutable_list.h>
@@ -124,7 +126,7 @@ TEST_CASE("immutable_list::pop_front creates and returns a new list with the hea
 
 // TODO : Find a more elegant and readable solution to test the different overloads
 // TODO : Make this test more lightweight
-TEST_CASE("immutable_list::insert_after/emplace_after provides a way to create a new list with one or more elements inserted after a specific position", "[immutable_list][modifiers][insert_after]") {
+TEST_CASE("immutable_list::insert_after/emplace_after provides a way to create a new list with one or more elements inserted after a specific position", "[immutable_list][modifiers][insert_after][emplace_after]") {
 	int insertionPivotValue{ 4 };
 	int insertedValue{ 5 };
 	
@@ -204,6 +206,27 @@ TEST_CASE("immutable_list::insert_after/emplace_after provides a way to create a
 		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(initializerInsertion, initializerInsertionElementsCount)));
 		REQUIRE(std::equal(originalElementAfterTheInsertionPivot, list.cend(), findFirstElementAfterTheInsertedOnes(emplaceInsertion, std::size_t(1))));
 	}
+}
+
+TEST_CASE("immutable_list::erase_after creates and returns a new list with one or more elements removed", "[immutable_list][modifiers][erase_after]") {
+	int erasionPivotValue{ 4 };
+	immutable_list<int> originalList{ 1, 2, 3, 4, 5, 6, 7, 8 };
+
+	auto erasionPivot{ std::find(originalList.cbegin(), originalList.cend(), erasionPivotValue) };
+
+	auto singleErasion{ originalList.erase_after(erasionPivot) };
+
+	int erasionEndValue{ 7 };
+	auto erasionEnd{ std::find(originalList.cbegin(), originalList.cend(), erasionEndValue) };
+	auto rangeErasionElementsCount{ std::distance(erasionPivot, erasionEnd) - 1 };
+	auto rangeErasion{ originalList.erase_after(erasionPivot, erasionEnd) };
+
+	SECTION("The new list has a size equal to the original list size minus the number or removed elements") {
+		REQUIRE(singleErasion.size() == (originalList.size() - 1));
+		REQUIRE(rangeErasion.size() == (originalList.size() - rangeErasionElementsCount));
+	}
+
+	// TODO: Find some correct test cases for erasation
 }
 
 TEST_CASE("immutable_lists can be compared for equality and inequality", "[immutable_list][operators][equality][inequality]") {

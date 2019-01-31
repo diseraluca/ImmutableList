@@ -174,11 +174,15 @@ namespace lds {
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, size_type count, const value_type& value) const;
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, std::initializer_list<T> list) const;
 
-		template<typename... Args>
-		[[nodiscard]] immutable_list<T> emplace_after(const_iterator pos, Args&&... args) const;
 
 		template <typename InputIterator>
 		[[nodiscard]] immutable_list<T> insert_after(const_iterator pos, InputIterator first, InputIterator last) const;
+
+		template<typename... Args>
+		[[nodiscard]] immutable_list<T> emplace_after(const_iterator pos, Args&&... args) const;
+
+		[[nodiscard]] immutable_list<T> erase_after(const_iterator pos);
+		[[nodiscard]] immutable_list<T> erase_after(const_iterator first, const_iterator last);
 
 		///@}
 		 
@@ -628,7 +632,38 @@ namespace lds {
 
 		return newList;
 	}
-	 
+
+	template <typename T>
+	inline immutable_list<T> immutable_list<T>::erase_after(const_iterator pos) {
+		immutable_list<T> newList{ this->cbegin(), ++pos };
+
+		auto lastElement{ newList.iteratorAt(newList.m_size - 1) };
+		lastElement.node.lock()->next = (++pos).node.lock();
+
+		newList.tail = this->tail;
+		newList.m_size += std::distance(pos, this->cend());
+
+		return newList;
+	}
+	
+	template <typename T>
+	inline immutable_list<T> immutable_list<T>::erase_after(const_iterator first, const_iterator last) {
+		if (first == last) {
+			return *this;
+		}
+
+		auto leftList{ immutable_list<T>(this->cbegin(), ++first) };
+		auto rightList{ immutable_list<T>(last, this->cend()) };
+
+		auto lastElement{ leftList.iteratorAt(leftList.m_size - 1) };
+		lastElement.node.lock()->next = rightList.head;
+
+		leftList.tail = rightList.tail;
+		leftList.m_size += rightList.m_size;
+
+		return leftList;
+	}
+
 	/*!
 	 * @brief	Checks if the list is empty
 	 *
